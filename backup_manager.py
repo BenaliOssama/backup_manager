@@ -1,6 +1,6 @@
 import os
+import subprocess
 from datetime import datetime
-
 
 SCHEDULE_FILE = "backup_schedules.txt"
 LOG_DIR = "logs"
@@ -25,3 +25,104 @@ def validate_schedule(schedule):
         return path and name
     except:
         return False
+
+
+# ---------------- Commands ---------------- #
+def create(schedule):
+    try:
+        if not validate_schedule(schedule):
+            raise ValueError
+
+        with open(SCHEDULE_FILE, "a") as f:
+            f.write(schedule + "\n")
+
+        log(f"New schedule added: {schedule}")
+
+    except:
+        log(f"Error: malformed schedule: {schedule}")
+
+
+def list_schedules():
+    try:
+        with open(SCHEDULE_FILE) as f:
+            lines = f.readlines()
+
+        log("Show schedules list")
+
+        for i, line in enumerate(lines):
+            print(f"{i}: {line.strip()}")
+
+    except:
+        log("Error: can't find backup_schedules.txt")
+
+
+def delete(index):
+    try:
+        with open(SCHEDULE_FILE) as f:
+            lines = f.readlines()
+
+        index = int(index)
+
+        if index < 0 or index >= len(lines):
+            raise IndexError
+
+        removed = lines.pop(index)
+
+        with open(SCHEDULE_FILE, "w") as f:
+            f.writelines(lines)
+
+        log(f"Schedule at index {index} deleted")
+
+    except FileNotFoundError:
+        log("Error: can't find backup_schedules.txt")
+    except:
+        log(f"Error: can't find schedule at index {index}")
+
+
+def start():
+    try:
+        if os.path.exists(PID_FILE):
+            log("Error: backup_service already running")
+            return
+
+        process = subprocess.Popen(
+            ["python3", "backup_service.py"],
+            start_new_session=True
+        )
+
+        with open(PID_FILE, "w") as f:
+            f.write(str(process.pid))
+
+        log("backup_service started")
+
+    except:
+        log("Error: can't start backup_service")
+
+
+def stop():
+    try:
+        if not os.path.exists(PID_FILE):
+            raise Exception
+
+        with open(PID_FILE) as f:
+            pid = int(f.read())
+
+        os.kill(pid, 9)
+        os.remove(PID_FILE)
+
+        log("backup_service stopped")
+
+    except:
+        log("Error: can't stop backup_service")
+
+
+def backups():
+    try:
+        files = os.listdir(BACKUP_DIR)
+        log("Show backups list")
+
+        for f in files:
+            print(f)
+
+    except:
+        log("Error: can't find backups directory")
