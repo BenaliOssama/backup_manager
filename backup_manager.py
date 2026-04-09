@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 from datetime import datetime
@@ -126,3 +127,31 @@ def backups():
 
     except:
         log("Error: can't find backups directory")
+
+
+# ---------------- Main ---------------- #
+def main():
+    if len(sys.argv) < 2:
+        log("Error: invalid command")
+        return
+
+    command = sys.argv[1]
+
+    if command == "create" and len(sys.argv) == 3:
+        create(sys.argv[2])
+    elif command == "list":
+        list_schedules()
+    elif command == "delete" and len(sys.argv) == 3:
+        delete(sys.argv[2])
+    elif command == "start":
+        start()
+    elif command == "stop":
+        stop()
+    elif command == "backups":
+        backups()
+    else:
+        log("Error: invalid command")
+
+
+if __name__ == "__main__":
+    main()
