@@ -11,14 +11,42 @@ def log(message):
     with open(LOG_FILE, "a") as f:
         f.write(entry)
 
+
 def cmd_create(schedule):
-    pass
+    parts = schedule.split(";")
+    if len(parts) != 3 or any(p.strip() == "" for p in parts):
+        log(f"Error: malformed schedule: {schedule}")
+        return
+    with open(SCHEDULES_FILE, "a") as f:
+        f.write(schedule + "\n")
+    log(f"New schedule added: {schedule}")
+
 
 def cmd_list():
-    pass
+    try:
+        with open(SCHEDULES_FILE, "r") as f:
+            lines = f.readlines()
+        for i, line in enumerate(lines):
+            print(f"{i}: {line.strip()}")
+        log("Show schedules list")
+    except FileNotFoundError:
+        log("Error: can't find backup_schedules.txt")
 
 def cmd_delete(index):
-    pass
+    try:
+        with open(SCHEDULES_FILE, "r") as f:
+            lines = f.readlines()
+        idx = int(index)
+        if idx < 0 or idx >= len(lines):
+            log(f"Error: can't find schedule at index {index}")
+            return
+        lines.pop(idx)
+        with open(SCHEDULES_FILE, "w") as f:
+            f.writelines(lines)
+        log(f"Schedule at index {index} deleted")
+    except FileNotFoundError:
+        log("Error: can't find backup_schedules.txt")
+
 
 def cmd_start():
     pass
