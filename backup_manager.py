@@ -1,6 +1,7 @@
 import sys
 import os
 from datetime import datetime
+import subprocess
 
 LOG_FILE = "./logs/backup_manager.log"
 
@@ -48,15 +49,27 @@ def cmd_delete(index):
         log("Error: can't find backup_schedules.txt")
 
 
+# helper functions 
+def is_service_running():
+    result = subprocess.run(["ps", "-A", "-f"], capture_output=True, text=True)
+    return "backup_service.py" in result.stdout
+
 def cmd_start():
-    pass
+    if is_service_running():
+        log("Error: backup_service already running")
+        return
+    subprocess.Popen(
+        ["python3", "./backup_service.py"],
+        start_new_session=True
+    )
+    log("backup_service started")
+##
 
 def cmd_stop():
     pass
 
 def cmd_backups():
     pass
-
 def main():
     if len(sys.argv) < 2:
         log("Error: no command provided")
@@ -80,3 +93,5 @@ def main():
         log(f"Error: unknown instruction")
 
 main()
+
+
