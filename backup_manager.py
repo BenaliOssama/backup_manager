@@ -1,8 +1,12 @@
 import sys
 import os
+import signal
+import subprocess
 from datetime import datetime
 
 LOG_FILE = "./logs/backup_manager.log"
+SCHEDULES_FILE = "./backup_schedules.txt"
+BACKUPS_DIR = "./backups"
 
 def log(message):
     os.makedirs("./logs", exist_ok=True)
@@ -12,22 +16,79 @@ def log(message):
         f.write(entry)
 
 def cmd_create(schedule):
-    pass
+    parts = schedule.split(";")
+    if len(parts) != 3 or any(p.strip() == "" for p in parts):
+        log(f"Error: malformed schedule: {schedule}")
+        return
+    with open(SCHEDULES_FILE, "a") as f:
+        f.write(schedule + "\n")
+    log(f"New schedule added: {schedule}")
 
 def cmd_list():
-    pass
+    try:
+        with open(SCHEDULES_FILE, "r") as f:
+            lines = f.readlines()
+        for i, line in enumerate(lines):
+            print(f"{i}: {line.strip()}")
+        log("Show schedules list")
+    except FileNotFoundError:
+        log("Error: can't find backup_schedules.txt")
 
 def cmd_delete(index):
-    pass
+    try:
+        with open(SCHEDULES_FILE, "r") as f:
+            lines = f.readlines()
+        idx = int(index)
+        if idx < 0 or idx >= len(lines):
+            log(f"Error: can't find schedule at index {index}")
+            return
+        lines.pop(idx)
+        with open(SCHEDULES_FILE, "w") as f:
+            f.writelines(lines)
+        log(f"Schedule at index {index} deleted")
+    except FileNotFoundError:
+        log("Error: can't find backup_schedules.txt")
+
+def is_service_running():
+    result = subprocess.run(["ps", "-A", "-f"], capture_output=True, text=True)
+    return "backup_service.py" in result.stdout
+
+def get_service_pid():
+    result = subprocess.run(["ps", "-A", "-f"], capture_output=True, text=True)
+    for line in result.stdout.splitlines():
+        if "backup_service.py" in line:
+            return int(line.split()[1])
+    return None
 
 def cmd_start():
-    pass
+    if is_service_running():
+        log("Error: backup_service already running")
+        return
+    subprocess.Popen(
+        ["python3", "./backup_service.py"],
+        start_new_session=True
+    )
+    log("backup_service started")
 
 def cmd_stop():
-    pass
+    pid = get_service_pid()
+    if pid is None:
+        log("Error: can't stop backup_service")
+        return
+    try:
+        os.kill(pid, signal.SIGTERM)
+        log("backup_service stopped")
+    except Exception:
+        log("Error: can't stop backup_service")
 
 def cmd_backups():
-    pass
+    try:
+        files = os.listdir(BACKUPS_DIR)
+        for file in files:
+            print(file)
+        log("Show backups list")
+    except FileNotFoundError:
+        log("Error: can't find backups directory")
 
 def main():
     if len(sys.argv) < 2:
@@ -49,6 +110,6 @@ def main():
     elif command == "backups":
         cmd_backups()
     else:
-        log(f"Error: unknown instruction")
+        log("Error: unknown instruction")
 
 main()
