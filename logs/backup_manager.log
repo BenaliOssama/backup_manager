@@ -1,0 +1,6 @@
+[10/04/2026 15:22] Error: can't stop backup_service
+[10/04/2026 15:22] Error: malformed schedule: wrong_format
+[10/04/2026 15:22] Error: can't find backups directory
+[10/04/2026 15:22] backup_service started
+[10/04/2026 15:22] Error: backup_service already running
+[10/04/2026 15:22] Error: unknown instruction
